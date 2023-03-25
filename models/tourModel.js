@@ -46,7 +46,14 @@ const tourSchema=mongoose.Schema({
       required:[true,'at tour must have a name']
     },
     priceDiscount:{
-        type:Number
+        type:Number,
+        // below is a custom validator will work on create and not on update
+        validate:{
+          validator:function(val){
+            return val<this.price // discount should be less than price
+          },
+          message:'Discount price ({VALUE}) should be less than the regular price'
+        }
     },
     summary:{
         type:String,
