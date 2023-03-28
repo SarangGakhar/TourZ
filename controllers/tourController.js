@@ -1,6 +1,8 @@
 const express = require('express');
 const Tour = require('../models/tourModel');
 const APIFeatures=require('../utils/apiFeatures');
+const catchAsync=require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
@@ -9,11 +11,8 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-
-
-
-exports.getAllTours = async (req, res) => {
-  try {
+exports.getAllTours = catchAsync( async (req, res,next) => {
+  
     // execute query
     
     const features = new APIFeatures(Tour, req.query)
@@ -32,55 +31,60 @@ exports.getAllTours = async (req, res) => {
         tours,
       },
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
+  
+}
+)
 
-exports.getTour = async (req, res) => {
-  try {
+exports.getTour = catchAsync( async (req, res,next) => {
+  
     const tour = await Tour.findById(req.params.id);
+
+    if(!tour){
+     return  next(new AppError('no tour found with that id ',404))
+    }
     res.status(200).json({
       status: 'success',
       data: {
         tour,
       },
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
+  
+});
 
-exports.createTour = async (req, res) => {
-  try {
-    const newTour = await Tour.create(req.body);
 
-    res.status(201).json({
-      status: 'success',
-      data: {
-        tour: newTour,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
 
-exports.updateTour = async (req, res) => {
-  try {
+exports.createTour = catchAsync(async (req, res,next) => {
+
+  const newTour = await Tour.create(req.body);
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      tour: newTour,
+    },
+  });
+
+  // try {
+   
+  // } catch (err) {
+  //   res.status(400).json({
+  //     status: 'fail',
+  //     message: err,
+  //   });
+  // }
+}
+)
+
+exports.updateTour = catchAsync( async (req, res,next) => {
+
     const updatedTour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       // this new:true will help up return the updated document
     });
+
+    if(!updatedTour){
+      return next(new AppError('no tour found with id',404))
+    }
 
     res.status(200).json({
       status: 'success',
@@ -88,35 +92,23 @@ exports.updateTour = async (req, res) => {
         tour: updatedTour,
       },
     });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
+  
+})
 
-exports.deleteTour = async (req, res) => {
-  try {
+exports.deleteTour = catchAsync( async (req, res,next) => {
+  
     const updatedTour = await Tour.findByIdAndDelete(req.params.id);
 
     res.status(204).json({
       status: 'success',
       data: null,
     });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-};
+  
+})
 
 
 // here we are using the aggrigation pipeling to get some stats of the data 
-exports.getTourStats= async (req,res)=>{
-
-    try{
+exports.getTourStats=  catchAsync( async (req,res,next)=>{
 
         const stats= await Tour.aggregate([
 // filter documents by the ratingsAverage
@@ -153,22 +145,15 @@ exports.getTourStats= async (req,res)=>{
         });
 
 
-    }
-    catch(err){
-        res.status(404).json({
-            status: 'fail',
-            message: err,
-          });
-    }
+    
+    
 
-}
+})
 
 
 // now suppose we want to calculate the month where the max number of tours are starting 
 
-exports.getMonthlyPlan=async (req,res)=>{
-
-try{
+exports.getMonthlyPlan= catchAsync( async (req,res,next)=>{
 
   const year=req.params.year*1;
   const plan=await Tour.aggregate([
@@ -215,15 +200,4 @@ try{
     },
   });
 
-}
-
-catch(err){
-  res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
-}
-
-
-
-}
+})
