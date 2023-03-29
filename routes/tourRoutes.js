@@ -1,7 +1,8 @@
 const Router = require('express');
-const {getMonthlyPlan,getTourStats,aliasTopTours,getAllTours, createTour, getTour, updateTour, deleteTour } =require( '../controllers/tourController');
 
 const router=Router();
+const {getMonthlyPlan,getTourStats,aliasTopTours,getAllTours, createTour, getTour, updateTour, deleteTour } =require( '../controllers/tourController');
+const authController=require('../controllers/authController')
 
 
 router
@@ -18,7 +19,7 @@ router
 
 router
  .route('/')
- .get(getAllTours)
+ .get(authController.protect,getAllTours)
  .post(createTour)
 
 router
