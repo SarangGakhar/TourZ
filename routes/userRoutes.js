@@ -1,7 +1,8 @@
 const Router= require('express');
-const { getAllUsers, createUser, getUser, updateUser, deleteUser } =require('../controllers/userController');
+const {deleteMe,updateMe, getAllUsers, createUser, getUser, updateUser, deleteUser } =require('../controllers/userController');
 const authController=require('../controllers/authController')
-
+const reviewController=require('../controllers/reviewController')
+const userController=require('../controllers/userController')
 
 const router=Router();
 
@@ -16,15 +17,30 @@ router.post('/login',authController.login)
 router.post('/forgotPassword',authController.forgotPassword)
 router.patch('/resetpassword/:token',authController.resetPassword)
 
+
+router.get('/me',authController.protect,userController.getMe,userController.getUser )
+router.patch('/updateMe',authController.protect,updateMe)
+router.delete('/deleteMe',authController.protect,deleteMe)
+
+
+router.patch('/updateMyPassword',authController.protect,authController.updatePassword)
+
+
+
+
+
 router
  .route('/')
- .get(getAllUsers)
- .post(createUser)
+ .get(authController.protect,authController.restrictTo('admin'),getAllUsers)
+ .post(authController.protect,authController.restrictTo('admin'),createUser)
 
 router
  .route('/:id')
- .get(getUser)
- .patch(updateUser)
- .delete(deleteUser)
+ .get(authController.protect,authController.restrictTo('admin'),getUser)
+ .patch(authController.protect,authController.restrictTo('admin'),updateUser)
+ .delete(authController.protect,authController.restrictTo('admin'),deleteUser)
+
+
+
 
  module.exports=router;
