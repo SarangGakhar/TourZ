@@ -21,6 +21,16 @@ router
 .get(authController.protect,authController.restrictTo('admin','lead-guide','guide'),getMonthlyPlan)
 
 router
+.route('/tours-within/:distance/center/:latlng/unit/:unit')
+.get(tourController.getToursWithin)
+
+router
+.route('/distances/:latlng/unit/:unit')
+.get(tourController.getDistances)
+
+
+
+router
  .route('/')
  .get(getAllTours)
  .post(authController.protect,authController.restrictTo('admin','lead-guide', 'guide'),createTour)

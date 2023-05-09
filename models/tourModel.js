@@ -1,5 +1,6 @@
 const mongoose=require('mongoose');
 const slugify=require('slugify');
+//const User=require('./userModel');
 
 const tourSchema=mongoose.Schema({
     // in the required array the first argument the first one is true/false and the 
@@ -35,7 +36,8 @@ const tourSchema=mongoose.Schema({
       type:Number,
       default:4.5,
       min:[1.0,'rating must be above 1.0'],
-      max:[5,'rating must be below 5.0']
+      max:[5,'rating must be below 5.0'],
+      set:val=>Math.round(val*10)/10
     },
     ratingsQuantity:{
         type:Number,
@@ -80,6 +82,44 @@ const tourSchema=mongoose.Schema({
       default:false
     },
 
+    startLocation:{
+      // inside startLocation we are giving various fields 
+      // geojson 
+      type:{
+        type:String,
+        default:'Point',
+        enum:['Point']
+      },
+      coordinates:[Number],
+      address:String,
+      description:String
+    },
+
+    locations:[
+
+      // this is embeded data this is array of docs 
+
+       {
+        type:{
+          type:String,
+          default:'Point',
+          enum:['Point']
+        },
+        coordinates:[Number],
+        address:String,
+        description:String,
+        day:Number
+       }
+    ],
+
+    guides:[
+      {
+        type:mongoose.Schema.ObjectId,
+        ref:'User'
+      }
+    ]
+
+   
 
   },
   
@@ -90,11 +130,21 @@ const tourSchema=mongoose.Schema({
   }
   );
 
-
+  tourSchema.index({price:1,ratingsAverage:-1});
+  tourSchema.index({slug:1});
+  tourSchema.index({startLocation:'2dsphere'});
 
   tourSchema.virtual('durationWeeks').get(function(){
     return this.duration/7;
   });
+
+  // virtual populate 
+  tourSchema.virtual('reviews',{
+    ref:'Review',
+    foreignField:'tour',
+    localField:'_id'
+
+  })
 
   // this is a document middleware and is invoked before .save() and .create()
   // this will not work on insert many
@@ -109,6 +159,16 @@ const tourSchema=mongoose.Schema({
     // this next function is same as we have seen in the express where we have req,res,next
 
   })
+
+
+
+  // tourSchema.pre('save', async function(next){
+
+  //   const guidesPromises=this.guides.map(async id=>await User.findById(id));
+  //  this.guides= await Promise.all(guidesPromises);
+
+  //   next();
+  // })
 
   // tourSchema.pre('save',function(next){
   //   console.log("will save doc........");
@@ -157,12 +217,19 @@ const tourSchema=mongoose.Schema({
     console.log(`query took ${Date.now()-this.start}`);
     next();
 
+  })
 
+  tourSchema.pre(/^find/,function(){
 
+    this.populate({
+      path:'guides',
+      select:'-__v -passwordChangedAt'
+})
   })
 
   // AGGREGATE MIDDLEWARE 
 
+/* 
 tourSchema.pre('aggregate',function(next){
   // points to current aggregation object
 
@@ -174,7 +241,7 @@ tourSchema.pre('aggregate',function(next){
   //console.log(this.pipeline());
   next();
 
-})
+}) */
 
 
 

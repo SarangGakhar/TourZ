@@ -25,7 +25,7 @@ const userSchema = mongoose.Schema({
     photo:{
         type:String
     },
-    
+
     role:{
         type:String,
         enum:['user','guide','lead-guide','admin'],
@@ -58,7 +58,12 @@ const userSchema = mongoose.Schema({
 
     passwordResetToken:String,
 
-    passwordResetExpires:Date
+    passwordResetExpires:Date,
+    active:{
+        type:Boolean,
+        default:true,
+        select:false
+    }
     
 });
 
@@ -83,6 +88,26 @@ userSchema.pre('save', async function(next){
 }
 )
 
+
+
+userSchema.pre('save',function(next){
+    if(!this.isModified('password') || this.isNew) return next();
+
+
+    this.passwordChangedAt=Date.now()-1000;
+
+    next();
+
+})
+
+
+userSchema.pre(/^find/,function(next){
+    // this point to the current query
+
+   this.find({active:true});
+   next();
+
+})
 userSchema.methods.correctPassword= async function(candidatePassword,userPassword){
     return  await bcrypt.compare(candidatePassword,userPassword) }
 
@@ -101,7 +126,7 @@ userSchema.methods.correctPassword= async function(candidatePassword,userPasswor
     }
 
 
-userSchema.methods.createPasswordResetToken=function(){
+userSchema.methods.createPasswordResetToken= async function(){
 
     const resetToken=crypto.randomBytes(32).toString('hex');
 
@@ -110,16 +135,18 @@ userSchema.methods.createPasswordResetToken=function(){
     .update(resetToken)
     .digest('hex');
 
-    console.log({resetToken},this.passwordResetToken)
+    
+    this.passwordResetExpires=Date.now()+10*60000;
+    
+    console.log({resetToken},this.passwordResetToken,this.passwordResetExpires)
 
-    this.passwordResetExpires=Date.now +10*60*1000
 
+
+    
     return resetToken;
-
-
 }
 
-const User=mongoose.model('user',userSchema);
+const User=mongoose.model('User',userSchema);
 
 module.exports=User;
 
